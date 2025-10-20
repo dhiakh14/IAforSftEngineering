@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>GlobalExceptionHandler.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">KhalfaouiMohamedDhia</a> &gt; <a href="index.source.html" class="el_package">com.example.sprinproject.handler</a> &gt; <span class="el_source">GlobalExceptionHandler.java</span></div><h1>GlobalExceptionHandler.java</h1><pre class="source lang-java linenums">package com.example.sprinproject.handler;
+
+import ch.qos.logback.core.LogbackException;
+import ch.qos.logback.core.joran.spi.ActionException;
+import jakarta.mail.MessageRemovedException;
+import jakarta.mail.MessagingException;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.authentication.DisabledException;
+import org.springframework.security.authentication.LockedException;
+import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.client.HttpClientErrorException;
+
+import java.util.HashSet;
+import java.util.Set;
+
+import static com.example.sprinproject.handler.BusinessErrorCodes.*;
+import static org.springframework.http.HttpStatus.*;
+
+@RestControllerAdvice
+
+<span class="nc" id="L25">public class GlobalExceptionHandler {</span>
+    @ExceptionHandler(LogbackException.class)
+    public ResponseEntity&lt;ExceptionResponse&gt; handleException(LockedException exp) {
+<span class="nc" id="L28">        return ResponseEntity</span>
+<span class="nc" id="L29">                .status(UNAUTHORIZED)</span>
+<span class="nc" id="L30">                .body(</span>
+<span class="nc" id="L31">                        ExceptionResponse.builder()</span>
+<span class="nc" id="L32">                                .businessErrorCode(ACCOUNT_LOCKED.getCode())</span>
+<span class="nc" id="L33">                                .error(exp.getMessage())</span>
+<span class="nc" id="L34">                                .build()</span>
+
+                );
+    }
+    @ExceptionHandler(DisabledException.class)
+    public ResponseEntity&lt;ExceptionResponse&gt; handleException(DisabledException exp) {
+<span class="nc" id="L40">        return ResponseEntity</span>
+<span class="nc" id="L41">                .status(UNAUTHORIZED)</span>
+<span class="nc" id="L42">                .body(</span>
+<span class="nc" id="L43">                        ExceptionResponse.builder()</span>
+<span class="nc" id="L44">                                .businessErrorCode(ACCOUNT_DISABLED.getCode())</span>
+<span class="nc" id="L45">                                .businessErrorDescription(ACCOUNT_DISABLED.getDescription())</span>
+<span class="nc" id="L46">                                .error(exp.getMessage())</span>
+<span class="nc" id="L47">                                .build()</span>
+                );
+    }
+    @ExceptionHandler(BadCredentialsException.class)
+    public ResponseEntity&lt;ExceptionResponse&gt; handleException() {
+<span class="nc" id="L52">        return ResponseEntity</span>
+<span class="nc" id="L53">                .status(UNAUTHORIZED)</span>
+<span class="nc" id="L54">                .body(</span>
+<span class="nc" id="L55">                        ExceptionResponse.builder()</span>
+<span class="nc" id="L56">                                .businessErrorCode(BAD_CREDENTIALS.getCode())</span>
+<span class="nc" id="L57">                                .businessErrorDescription(BAD_CREDENTIALS.getDescription())</span>
+<span class="nc" id="L58">                                .error(&quot;Login and / or Password is incorrect&quot;)</span>
+<span class="nc" id="L59">                                .build()</span>
+                );
+    }
+
+    @ExceptionHandler(MessageRemovedException.class)
+    public ResponseEntity&lt;ExceptionResponse&gt; handleException(MessagingException exp) {
+<span class="nc" id="L65">        return ResponseEntity</span>
+<span class="nc" id="L66">                .status(INTERNAL_SERVER_ERROR)</span>
+<span class="nc" id="L67">                .body(</span>
+<span class="nc" id="L68">                        ExceptionResponse.builder()</span>
+<span class="nc" id="L69">                                .error(exp.getMessage())</span>
+<span class="nc" id="L70">                                .build()</span>
+                );
+    }
+
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public ResponseEntity&lt;ExceptionResponse&gt; handleMethodArgumentNotValidException(MethodArgumentNotValidException exp) {
+<span class="nc" id="L76">        Set&lt;String&gt; errors = new HashSet&lt;&gt;();</span>
+<span class="nc" id="L77">        exp.getBindingResult().getAllErrors()</span>
+<span class="nc" id="L78">                .forEach(error -&gt; {</span>
+<span class="nc" id="L79">                    var errorMessage = error.getDefaultMessage();</span>
+<span class="nc" id="L80">                    errors.add(errorMessage);</span>
+<span class="nc" id="L81">                });</span>
+
+<span class="nc" id="L83">        return ResponseEntity</span>
+<span class="nc" id="L84">                .status(BAD_REQUEST)</span>
+<span class="nc" id="L85">                .body(</span>
+<span class="nc" id="L86">                        ExceptionResponse.builder()</span>
+<span class="nc" id="L87">                                .validationErrors(errors)</span>
+<span class="nc" id="L88">                                .build()</span>
+                );
+    }
+
+    @ExceptionHandler(Exception.class)
+    public ResponseEntity&lt;ExceptionResponse&gt; handleException(Exception exp) {
+<span class="nc" id="L94">        exp.printStackTrace();</span>
+<span class="nc" id="L95">        return ResponseEntity</span>
+<span class="nc" id="L96">                .status(INTERNAL_SERVER_ERROR)</span>
+<span class="nc" id="L97">                .body(</span>
+<span class="nc" id="L98">                        ExceptionResponse.builder()</span>
+<span class="nc" id="L99">                                .businessErrorDescription(&quot;Internal error, please contact the admin&quot;)</span>
+<span class="nc" id="L100">                                .error(exp.getMessage())</span>
+<span class="nc" id="L101">                                .build()</span>
+                );
+    }
+
+
+
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.10.202304240956</span></div></body></html>

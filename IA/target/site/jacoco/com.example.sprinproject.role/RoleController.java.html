@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>RoleController.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">KhalfaouiMohamedDhia</a> &gt; <a href="index.source.html" class="el_package">com.example.sprinproject.role</a> &gt; <span class="el_source">RoleController.java</span></div><h1>RoleController.java</h1><pre class="source lang-java linenums">package com.example.sprinproject.role;
+
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+
+@RestController
+@RequestMapping(&quot;/roles&quot;)
+public class RoleController {
+
+    private final RoleService roleService;
+
+<span class="nc" id="L15">    public RoleController(RoleService roleService) {</span>
+<span class="nc" id="L16">        this.roleService = roleService;</span>
+<span class="nc" id="L17">    }</span>
+
+    @PostMapping(&quot;/add&quot;)
+    public ResponseEntity&lt;String&gt; addRole(@RequestParam String name) {
+        try {
+<span class="nc" id="L22">            Role newRole = roleService.getOrCreateRole(name);</span>
+<span class="nc" id="L23">            return ResponseEntity.status(HttpStatus.CREATED).body(&quot;Role '&quot; + newRole.getName() + &quot;' added successfully.&quot;);</span>
+<span class="nc" id="L24">        } catch (IllegalArgumentException e) {</span>
+<span class="nc" id="L25">            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());</span>
+        }
+    }
+
+    @GetMapping(&quot;/getRoles&quot;)
+    public List&lt;Role&gt; getRoles(){
+<span class="nc" id="L31">        return roleService.getRoles();</span>
+    }
+
+
+
+
+
+    }
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.10.202304240956</span></div></body></html>

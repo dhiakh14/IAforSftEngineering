@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>AuthenticationController.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">KhalfaouiMohamedDhia</a> &gt; <a href="index.source.html" class="el_package">com.example.sprinproject.auth</a> &gt; <span class="el_source">AuthenticationController.java</span></div><h1>AuthenticationController.java</h1><pre class="source lang-java linenums">package com.example.sprinproject.auth;
+import com.example.sprinproject.user.Token;
+import com.example.sprinproject.user.User;
+import com.example.sprinproject.user.userRepository;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.mail.MessagingException;
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
+import org.springframework.boot.actuate.web.exchanges.HttpExchange;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.web.bind.annotation.*;
+
+import java.io.IOException;
+import java.security.GeneralSecurityException;
+import java.util.List;
+import java.util.Map;
+
+@RestController
+@RequestMapping(&quot;/auth&quot;)
+@Tag(name = &quot;Authentication&quot;)
+@RequiredArgsConstructor
+
+public class AuthenticationController {
+    private final AuthenticationService authService;
+    private final userRepository userRepository;
+
+
+    @PostMapping(&quot;/Register&quot;)
+    @ResponseStatus(HttpStatus.ACCEPTED)
+    public ResponseEntity&lt;?&gt; register(@RequestBody @Valid RegistrationRequest request) throws MessagingException {
+<span class="nc" id="L35">        List&lt;String&gt; roles = List.of(&quot;USER&quot;);</span>
+<span class="nc" id="L36">        authService.register(request, roles);</span>
+<span class="nc" id="L37">        return ResponseEntity.accepted().build();</span>
+
+    }
+    @PostMapping(&quot;/google&quot;)
+    public ResponseEntity&lt;AuthenficationResponse&gt; authenticateWithGoogle(
+            @RequestParam String  googleToken
+    ) throws IOException, GeneralSecurityException {
+<span class="nc" id="L44">        return ResponseEntity.ok(authService.authenticateWithGoogle(googleToken));</span>
+    }
+
+
+    @PostMapping(&quot;/authenticate&quot;)
+    private ResponseEntity&lt;AuthenficationResponse&gt; authenticate(
+            @RequestBody @Valid AuthenficationRequest request
+    ){
+<span class="nc" id="L52">        return ResponseEntity.ok(authService.authenficate(request));</span>
+    }
+    @GetMapping(&quot;activate-account&quot;)
+    public void confirm(
+            @RequestParam String token
+    ) throws MessagingException {
+<span class="nc" id="L58">        authService.activateaccount(token);</span>
+<span class="nc" id="L59">    }</span>
+
+    @PostMapping(&quot;/forgot-password&quot;)
+    public ResponseEntity&lt;?&gt; forgotPassword(@RequestParam String email) throws MessagingException {
+<span class="nc" id="L63">        authService.forgotPassword(email);</span>
+<span class="nc" id="L64">        return ResponseEntity.ok(&quot;Password reset link sent to email&quot;);</span>
+    }
+
+    @PostMapping(&quot;/reset-password&quot;)
+    public ResponseEntity&lt;?&gt; resetPassword(
+            @RequestParam String token,
+            @RequestParam String newPassword
+    ) {
+        try {
+<span class="nc" id="L73">            authService.resetPassword(token, newPassword);</span>
+<span class="nc" id="L74">            return ResponseEntity.ok().body(</span>
+<span class="nc" id="L75">                    Map.of(&quot;message&quot;, &quot;Password has been reset successfully&quot;)</span>
+            );
+<span class="nc" id="L77">        } catch (RuntimeException e) {</span>
+<span class="nc" id="L78">            return ResponseEntity.status(HttpStatus.BAD_REQUEST)</span>
+<span class="nc" id="L79">                    .body(Map.of(&quot;message&quot;, e.getMessage()));</span>
+        }
+    }
+
+    @PostMapping(&quot;/update-password&quot;)
+    public ResponseEntity&lt;?&gt; resetPassword(@RequestBody ResetPasswordDto resetPasswordDto) {
+        try {
+<span class="nc" id="L86">            User updatedUser = authService.updatePassword(resetPasswordDto);</span>
+<span class="nc" id="L87">            return ResponseEntity.ok(Map.of(&quot;message&quot;, &quot;Password updated successfully&quot;));</span>
+<span class="nc" id="L88">        } catch (RuntimeException e) {</span>
+<span class="nc" id="L89">            return ResponseEntity.badRequest().body(Map.of(&quot;message&quot;, e.getMessage()));</span>
+        }
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.10.202304240956</span></div></body></html>

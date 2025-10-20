@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>User.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">KhalfaouiMohamedDhia</a> &gt; <a href="index.source.html" class="el_package">com.example.sprinproject.user</a> &gt; <span class="el_source">User.java</span></div><h1>User.java</h1><pre class="source lang-java linenums">package com.example.sprinproject.user;
+
+import com.example.sprinproject.role.Role;
+import jakarta.persistence.*;
+import lombok.*;
+import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.annotation.LastModifiedDate;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.userdetails.UserDetails;
+
+import javax.annotation.Nullable;
+import java.security.Principal;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
+
+@Entity
+@Getter
+@Setter
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
+@ToString
+@EntityListeners(AuditingEntityListener.class)
+
+public class  User implements UserDetails, Principal {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long idUser;
+    private String firstName;
+    private String lastName;
+    @Column(nullable = true)
+    private LocalDate dateOfBirth;
+    @Column(unique = true)
+    private String email;
+    private String password;
+    private boolean accountLocked;
+    private boolean enabled;
+    @CreatedDate
+    @Column(nullable = false, updatable = false)
+    private LocalDateTime createDate;
+    @LastModifiedDate
+    @Column(insertable = false)
+    private LocalDateTime lastModifiedDate;
+
+
+
+
+
+    @ManyToMany(fetch = FetchType.EAGER)
+    @JoinTable(
+            name = &quot;user_roles&quot;,
+            joinColumns = @JoinColumn(name = &quot;user_id&quot;),
+            inverseJoinColumns = @JoinColumn(name = &quot;role_id&quot;)
+    )
+    private Set&lt;Role&gt; roles = new HashSet&lt;&gt;();
+    @Override
+    public String getName() {
+<span class="nc" id="L66">        return email;</span>
+    }
+
+    @Override
+    public Collection&lt;? extends GrantedAuthority&gt; getAuthorities() {
+<span class="nc" id="L71">        return this.roles</span>
+<span class="nc" id="L72">                .stream()</span>
+<span class="nc" id="L73">                .map(r -&gt; new SimpleGrantedAuthority(r.getName()))</span>
+<span class="nc" id="L74">                .collect(Collectors.toList());</span>
+    }
+
+    @Override
+    public String getPassword() {
+<span class="fc" id="L79">        return password;</span>
+    }
+
+    @Override
+    public String getUsername() {
+<span class="nc" id="L84">        return email;</span>
+    }
+
+    @Override
+    public boolean isAccountNonExpired() {
+<span class="nc" id="L89">        return true;</span>
+    }
+
+    @Override
+    public boolean isAccountNonLocked() {
+<span class="nc bnc" id="L94" title="All 2 branches missed.">        return !accountLocked;</span>
+    }
+
+    @Override
+    public boolean isCredentialsNonExpired() {
+<span class="nc" id="L99">        return true;</span>
+    }
+
+    @Override
+    public boolean isEnabled() {
+<span class="fc" id="L104">        return enabled;</span>
+    }
+
+    public String FullName(){
+<span class="fc" id="L108">        return firstName+&quot; &quot;+lastName ;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.10.202304240956</span></div></body></html>

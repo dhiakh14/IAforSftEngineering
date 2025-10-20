@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>EmailService.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">KhalfaouiMohamedDhia</a> &gt; <a href="index.source.html" class="el_package">com.example.sprinproject.email</a> &gt; <span class="el_source">EmailService.java</span></div><h1>EmailService.java</h1><pre class="source lang-java linenums">package com.example.sprinproject.email;
+
+import jakarta.mail.MessagingException;
+import jakarta.mail.internet.MimeMessage;
+import lombok.RequiredArgsConstructor;
+import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.mail.javamail.MimeMailMessage;
+import org.springframework.mail.javamail.MimeMessageHelper;
+import org.springframework.scheduling.annotation.Async;
+import org.springframework.security.crypto.codec.Utf8;
+import org.springframework.stereotype.Service;
+import org.thymeleaf.context.Context;
+import org.thymeleaf.spring6.SpringTemplateEngine;
+
+import java.nio.charset.StandardCharsets;
+import java.util.HashMap;
+import java.util.Map;
+
+@Service
+@RequiredArgsConstructor
+
+public class EmailService {
+    private final JavaMailSender javaMailSender;
+    private final SpringTemplateEngine springTemplateEngine;
+
+    @Async
+
+    public void SendEmail(String to , String username, EmailTemplateName emailTemplateName
+    , String confirmationUrl, String activationCode , String subject)
+            throws MessagingException {
+        String TemplateName;
+<span class="nc bnc" id="L32" title="All 2 branches missed.">        if (emailTemplateName == null) {</span>
+<span class="nc" id="L33">            TemplateName = &quot;confirm_email&quot;;</span>
+        } else {
+<span class="nc" id="L35">            TemplateName = emailTemplateName.name();</span>
+        }
+<span class="nc" id="L37">        MimeMessage mimeMessage = javaMailSender.createMimeMessage();</span>
+<span class="nc" id="L38">        MimeMessageHelper mimeMessageHelper = new MimeMessageHelper(</span>
+                mimeMessage,
+                MimeMessageHelper.MULTIPART_MODE_MIXED,
+<span class="nc" id="L41">                StandardCharsets.UTF_8.name()</span>
+        );
+<span class="nc" id="L43">        Map&lt;String, Object&gt; properties = new HashMap&lt;&gt;();</span>
+<span class="nc" id="L44">        properties.put(&quot;username&quot;, username);</span>
+<span class="nc" id="L45">        properties.put(&quot;confirmationUrl&quot;, confirmationUrl);</span>
+<span class="nc" id="L46">        properties.put(&quot;activation_Code&quot;, activationCode);</span>
+<span class="nc" id="L47">        Context context = new Context();</span>
+<span class="nc" id="L48">        context.setVariables(properties);</span>
+
+<span class="nc" id="L50">        mimeMessageHelper.setFrom(&quot;khdhia29@gmail.com&quot;);</span>
+<span class="nc" id="L51">        mimeMessageHelper.setTo(to);</span>
+<span class="nc" id="L52">        mimeMessageHelper.setSubject(subject);</span>
+
+<span class="nc" id="L54">        String template = springTemplateEngine.process(TemplateName, context);</span>
+<span class="nc" id="L55">        mimeMessageHelper.setText(template, true);</span>
+<span class="nc" id="L56">        javaMailSender.send(mimeMessage);</span>
+
+<span class="nc" id="L58">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.10.202304240956</span></div></body></html>

@@ -1,0 +1,267 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>AuthenticationService.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">KhalfaouiMohamedDhia</a> &gt; <a href="index.source.html" class="el_package">com.example.sprinproject.auth</a> &gt; <span class="el_source">AuthenticationService.java</span></div><h1>AuthenticationService.java</h1><pre class="source lang-java linenums">package com.example.sprinproject.auth;
+
+import com.example.sprinproject.email.EmailService;
+import com.example.sprinproject.email.EmailTemplateName;
+import com.example.sprinproject.role.Role;
+import com.example.sprinproject.role.RoleRepository;
+import com.example.sprinproject.security.JwtService;
+import com.example.sprinproject.user.Token;
+import com.example.sprinproject.user.TokenRepository;
+import com.example.sprinproject.user.User;
+import com.example.sprinproject.user.userRepository;
+import com.google.api.client.googleapis.auth.oauth2.GoogleIdToken;
+import com.google.api.client.googleapis.auth.oauth2.GoogleIdTokenVerifier;
+import com.google.api.client.http.javanet.NetHttpTransport;
+import com.google.api.client.json.gson.GsonFactory;
+import jakarta.mail.MessagingException;
+import jakarta.transaction.Transactional;
+import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.stereotype.Service;
+
+
+import java.io.IOException;
+import java.security.GeneralSecurityException;
+import java.security.SecureRandom;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.util.*;
+import java.util.stream.Collectors;
+
+@Service
+@RequiredArgsConstructor
+
+public class AuthenticationService {
+    private final RoleRepository role;
+    private final PasswordEncoder passwordEncoder;
+    private final userRepository userRepository;
+    private final TokenRepository tokenRepository;
+    private final EmailService emailService;
+    @Value(&quot;${application.mailing.frontend.activation-url}&quot;)
+    private String activationUrl;
+    private final AuthenticationManager authenticationManager;
+    private final JwtService jwtService;
+    @Value(&quot;${spring.security.oauth2.client.registration.google.client-id}&quot;)
+    private String googleClientId;
+    @Value(&quot;${application.mailing.frontend.reset-password-url}&quot;)
+    private String resetPasswordUrl;
+
+    public AuthenficationResponse authenticateWithGoogle(String googleToken) throws GeneralSecurityException, IOException {
+<span class="nc" id="L57">        GoogleIdTokenVerifier verifier = new GoogleIdTokenVerifier.Builder(</span>
+                new NetHttpTransport(),
+                new GsonFactory()
+        )
+<span class="nc" id="L61">                .setAudience(Collections.singletonList(googleClientId))</span>
+<span class="nc" id="L62">                .build();</span>
+
+<span class="nc" id="L64">        GoogleIdToken idToken = verifier.verify(googleToken);</span>
+<span class="nc bnc" id="L65" title="All 2 branches missed.">        if (idToken == null) {</span>
+<span class="nc" id="L66">            throw new RuntimeException(&quot;Invalid Google token&quot;);</span>
+        }
+
+<span class="nc" id="L69">        GoogleIdToken.Payload payload = idToken.getPayload();</span>
+<span class="nc" id="L70">        String email = payload.getEmail();</span>
+<span class="nc" id="L71">        String firstName = (String) payload.get(&quot;given_name&quot;);</span>
+<span class="nc" id="L72">        String lastName = (String) payload.get(&quot;family_name&quot;);</span>
+
+<span class="nc" id="L74">        LocalDate defaultDateOfBirth = LocalDate.of(2000, 1, 1);</span>
+
+<span class="nc" id="L76">        User user = userRepository.findByEmail(email)</span>
+<span class="nc" id="L77">                .orElseGet(() -&gt; {</span>
+<span class="nc" id="L78">                    Role userRole = role.findByName(&quot;USER&quot;)</span>
+<span class="nc" id="L79">                            .orElseThrow(() -&gt; new IllegalStateException(&quot;ROLE_USER not found&quot;));</span>
+
+<span class="nc" id="L81">                    User newUser = new User();</span>
+<span class="nc" id="L82">                    newUser.setFirstName(firstName);</span>
+<span class="nc" id="L83">                    newUser.setLastName(lastName);</span>
+<span class="nc" id="L84">                    newUser.setEmail(email);</span>
+<span class="nc" id="L85">                    newUser.setDateOfBirth(defaultDateOfBirth);</span>
+<span class="nc" id="L86">                    newUser.setPassword(passwordEncoder.encode(generateRandomPassword()));</span>
+<span class="nc" id="L87">                    newUser.setAccountLocked(false);</span>
+<span class="nc" id="L88">                    newUser.setEnabled(true);</span>
+
+<span class="nc" id="L90">                    Set&lt;Role&gt; roles = new HashSet&lt;&gt;();</span>
+<span class="nc" id="L91">                    roles.add(userRole);</span>
+<span class="nc" id="L92">                    newUser.setRoles(roles);</span>
+
+<span class="nc" id="L94">                    return userRepository.save(newUser);</span>
+                });
+
+<span class="nc" id="L97">        Map&lt;String, Object&gt; claims = new HashMap&lt;&gt;();</span>
+<span class="nc" id="L98">        claims.put(&quot;fullName&quot;, user.FullName());</span>
+<span class="nc" id="L99">        claims.put(&quot;email&quot;, user.getEmail());</span>
+<span class="nc" id="L100">        claims.put(&quot;dateOfBirth&quot;, user.getDateOfBirth());</span>
+
+<span class="nc" id="L102">        String jwtToken = jwtService.generateToken(claims, user);</span>
+<span class="nc" id="L103">        return AuthenficationResponse.builder().token(jwtToken).build();</span>
+    }
+
+    private String generateRandomPassword() {
+<span class="nc" id="L107">        String chars = &quot;ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789&quot;;</span>
+<span class="nc" id="L108">        SecureRandom random = new SecureRandom();</span>
+<span class="nc" id="L109">        StringBuilder sb = new StringBuilder(20);</span>
+<span class="nc bnc" id="L110" title="All 2 branches missed.">        for (int i = 0; i &lt; 20; i++) {</span>
+<span class="nc" id="L111">            sb.append(chars.charAt(random.nextInt(chars.length())));</span>
+        }
+<span class="nc" id="L113">        return sb.toString();</span>
+    }
+
+
+
+
+    public void register(RegistrationRequest request, List&lt;String&gt; roleNames) throws MessagingException {
+<span class="fc" id="L120">        List&lt;Role&gt; roles = roleNames.stream()</span>
+<span class="fc" id="L121">                .map(roleName -&gt; role.findByName(roleName.toUpperCase())</span>
+<span class="fc" id="L122">                        .orElseThrow(() -&gt; new IllegalStateException(&quot;Role &quot; + roleName + &quot; was not initialized&quot;)))</span>
+<span class="fc" id="L123">                .collect(Collectors.toList());</span>
+
+<span class="fc" id="L125">        var user = User.builder()</span>
+<span class="fc" id="L126">                .firstName(request.getFirstName())</span>
+<span class="fc" id="L127">                .lastName(request.getLastName())</span>
+<span class="fc" id="L128">                .dateOfBirth(request.getDateOfBirth())</span>
+<span class="fc" id="L129">                .email(request.getEmail())</span>
+<span class="fc" id="L130">                .password(passwordEncoder.encode(request.getPassword()))</span>
+<span class="fc" id="L131">                .accountLocked(false)</span>
+<span class="fc" id="L132">                .enabled(false)</span>
+<span class="fc" id="L133">                .roles(new HashSet&lt;&gt;(roles))</span>
+<span class="fc" id="L134">                .build();</span>
+<span class="fc" id="L135">        userRepository.save(user);</span>
+<span class="fc" id="L136">        sendValidationEmail(user);</span>
+<span class="fc" id="L137">    }</span>
+
+
+    protected void sendValidationEmail(User user) throws MessagingException {
+<span class="fc" id="L141">        var newToken = generateAndSaveActivationToken(user);</span>
+<span class="fc" id="L142">        emailService.SendEmail(</span>
+<span class="fc" id="L143">                user.getEmail(),</span>
+<span class="fc" id="L144">                user.FullName(),</span>
+                EmailTemplateName.ACTIVATE_ACCOUNT,
+                activationUrl,
+                newToken,
+                &quot;account activation&quot;
+        );
+<span class="fc" id="L150">    }</span>
+
+    private String generateAndSaveActivationToken(User user) {
+<span class="fc" id="L153">        String generatedToken =generateActivationCode(6);</span>
+<span class="fc" id="L154">        var token = Token.builder()</span>
+<span class="fc" id="L155">                .token(generatedToken)</span>
+<span class="fc" id="L156">                .createdAt(LocalDateTime.now())</span>
+<span class="fc" id="L157">                .expiresAt(LocalDateTime.now().plusMinutes(15))</span>
+<span class="fc" id="L158">                .user(user)</span>
+<span class="fc" id="L159">                .build();</span>
+<span class="fc" id="L160">        tokenRepository.save(token);</span>
+
+<span class="fc" id="L162">        return generatedToken;</span>
+    }
+
+    private String generateActivationCode(int length) {
+<span class="fc" id="L166">        String characters = &quot;0123456789&quot;;</span>
+<span class="fc" id="L167">        StringBuilder codebuilder = new StringBuilder();</span>
+<span class="fc" id="L168">        SecureRandom secureRandom = new SecureRandom();</span>
+<span class="fc bfc" id="L169" title="All 2 branches covered.">        for (int i=0 ; i &lt; length; i++){</span>
+<span class="fc" id="L170">            int randomIndex = secureRandom.nextInt(characters.length());</span>
+<span class="fc" id="L171">            codebuilder.append(characters.charAt(randomIndex));</span>
+        }
+<span class="fc" id="L173">        return codebuilder.toString();</span>
+
+
+    }
+
+    public AuthenficationResponse authenficate(AuthenficationRequest request) {
+<span class="fc" id="L179">        var auth = authenticationManager.authenticate(</span>
+                new UsernamePasswordAuthenticationToken(
+<span class="fc" id="L181">                        request.getEmail(), request.getPassword()</span>
+                )
+        );
+<span class="fc" id="L184">        var claims= new HashMap&lt;String , Object&gt;();</span>
+<span class="fc" id="L185">        var user = ((User)auth.getPrincipal());</span>
+<span class="fc" id="L186">        claims.put(&quot;fullName&quot;, user.FullName());</span>
+<span class="fc" id="L187">        claims.put(&quot;dateOfBirth&quot;, user.getDateOfBirth());</span>
+<span class="fc" id="L188">        var jwtToken = jwtService.generateToken(claims, user);</span>
+<span class="fc" id="L189">        return AuthenficationResponse.builder().token(jwtToken).build();</span>
+    }
+
+
+    public void activateaccount(String token) throws MessagingException {
+<span class="pc" id="L194">        Token savedToken= tokenRepository.findByToken(token).orElseThrow(()-&gt; new RuntimeException(&quot;Invalid Token&quot;));</span>
+<span class="pc bpc" id="L195" title="1 of 2 branches missed.">        if (LocalDateTime.now().isAfter(savedToken.getExpiresAt())){</span>
+<span class="nc" id="L196">            sendValidationEmail(savedToken.getUser());</span>
+<span class="nc" id="L197">            throw new RuntimeException(&quot;Activation Token Has Expired. A new Token has been send to the same email address&quot;);</span>
+
+        }
+<span class="pc" id="L200">        var user = userRepository.findById(savedToken.getUser().getIdUser()).orElseThrow(()-&gt; new UsernameNotFoundException(&quot;User Not Found&quot;));</span>
+<span class="fc" id="L201">        user.setEnabled(true);</span>
+<span class="fc" id="L202">        userRepository.save(user);</span>
+<span class="fc" id="L203">        savedToken.setValidatedAt(LocalDateTime.now());</span>
+<span class="fc" id="L204">        tokenRepository.save(savedToken);</span>
+
+<span class="fc" id="L206">    }</span>
+
+    public void forgotPassword(String email) throws MessagingException {
+<span class="nc" id="L209">        User user = userRepository.findByEmail(email)</span>
+<span class="nc" id="L210">                .orElseThrow(() -&gt; new UsernameNotFoundException(&quot;User not found&quot;));</span>
+
+<span class="nc" id="L212">        String resetToken = UUID.randomUUID().toString();</span>
+<span class="nc" id="L213">        Token token = Token.builder()</span>
+<span class="nc" id="L214">                .token(resetToken)</span>
+<span class="nc" id="L215">                .createdAt(LocalDateTime.now())</span>
+<span class="nc" id="L216">                .expiresAt(LocalDateTime.now().plusMinutes(30))</span>
+<span class="nc" id="L217">                .user(user)</span>
+<span class="nc" id="L218">                .build();</span>
+
+<span class="nc" id="L220">        tokenRepository.save(token);</span>
+
+<span class="nc" id="L222">        String resetLink = resetPasswordUrl + &quot;?token=&quot; + resetToken;</span>
+
+<span class="nc" id="L224">        emailService.SendEmail(</span>
+<span class="nc" id="L225">                user.getEmail(),</span>
+<span class="nc" id="L226">                user.FullName(),</span>
+                EmailTemplateName.RESET_PASSWORD,
+                resetLink,
+                resetToken,
+                &quot;Password Reset Request&quot;
+        );
+<span class="nc" id="L232">    }</span>
+
+    public void resetPassword(String token, String newPassword) {
+<span class="nc" id="L235">        Token savedToken = tokenRepository.findByToken(token)</span>
+<span class="nc" id="L236">                .orElseThrow(() -&gt; new RuntimeException(&quot;Invalid or expired token&quot;));</span>
+
+<span class="nc bnc" id="L238" title="All 2 branches missed.">        if (LocalDateTime.now().isAfter(savedToken.getExpiresAt())) {</span>
+<span class="nc" id="L239">            throw new RuntimeException(&quot;Token has expired&quot;);</span>
+        }
+
+        try {
+<span class="nc" id="L243">            User user = savedToken.getUser();</span>
+<span class="nc" id="L244">            user.setPassword(passwordEncoder.encode(newPassword));</span>
+<span class="nc" id="L245">            userRepository.save(user);</span>
+<span class="nc" id="L246">            tokenRepository.delete(savedToken);</span>
+<span class="nc" id="L247">        } catch (Exception e) {</span>
+<span class="nc" id="L248">            throw new RuntimeException(&quot;Failed to update password. Please try again.&quot;);</span>
+<span class="nc" id="L249">        }</span>
+<span class="nc" id="L250">    }</span>
+
+    public User updatePassword(ResetPasswordDto resetPasswordDto) {
+<span class="nc" id="L253">        User user = userRepository.findByEmail(resetPasswordDto.getEmail())</span>
+<span class="nc" id="L254">                .orElseThrow(() -&gt; new RuntimeException(&quot;User not found&quot;));</span>
+
+<span class="nc bnc" id="L256" title="All 2 branches missed.">        if (!passwordEncoder.matches(resetPasswordDto.getCurrentPassword(), user.getPassword())) {</span>
+<span class="nc" id="L257">            throw new RuntimeException(&quot;Current password is incorrect&quot;);</span>
+        }
+
+<span class="nc" id="L260">        user.setPassword(passwordEncoder.encode(resetPasswordDto.getNewPassword()));</span>
+<span class="nc" id="L261">        return userRepository.save(user);</span>
+    }
+
+
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.10.202304240956</span></div></body></html>

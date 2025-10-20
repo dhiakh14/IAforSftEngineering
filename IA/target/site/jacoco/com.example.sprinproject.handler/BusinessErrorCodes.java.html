@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>BusinessErrorCodes.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">KhalfaouiMohamedDhia</a> &gt; <a href="index.source.html" class="el_package">com.example.sprinproject.handler</a> &gt; <span class="el_source">BusinessErrorCodes.java</span></div><h1>BusinessErrorCodes.java</h1><pre class="source lang-java linenums">package com.example.sprinproject.handler;
+
+import lombok.Getter;
+import org.springframework.http.HttpStatus;
+
+import static org.springframework.http.HttpStatus.BAD_REQUEST;
+import static org.springframework.http.HttpStatus.FORBIDDEN;
+import static org.springframework.http.HttpStatus.NOT_IMPLEMENTED;
+
+<span class="nc" id="L10">public enum BusinessErrorCodes {</span>
+<span class="nc" id="L11">    NO_CODE(0, NOT_IMPLEMENTED, &quot;No code&quot;),</span>
+<span class="nc" id="L12">    INCORRECT_CURRENT_PASSWORD(300, BAD_REQUEST, &quot;Current password is incorrect&quot;),</span>
+<span class="nc" id="L13">    NEW_PASSWORD_DOES_NOT_MATCH(301, BAD_REQUEST, &quot;The new password does not match&quot;),</span>
+<span class="nc" id="L14">    ACCOUNT_LOCKED(302, FORBIDDEN, &quot;User account is locked&quot;),</span>
+<span class="nc" id="L15">    ACCOUNT_DISABLED(303, FORBIDDEN, &quot;User account is disabled&quot;),</span>
+<span class="nc" id="L16">    BAD_CREDENTIALS(304, FORBIDDEN, &quot;Login and / or Password is incorrect&quot;),</span>
+    ;
+
+    @Getter
+    private final int code;
+    @Getter
+    private final String description;
+    @Getter
+    private final HttpStatus httpStatus;
+
+<span class="nc" id="L26">    BusinessErrorCodes(int code, HttpStatus status, String description) {</span>
+<span class="nc" id="L27">        this.code = code;</span>
+<span class="nc" id="L28">        this.description = description;</span>
+<span class="nc" id="L29">        this.httpStatus = status;</span>
+<span class="nc" id="L30">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.10.202304240956</span></div></body></html>
